@@ -11,9 +11,8 @@ exports.getAllBookings = async (req, res) => {
                 c.name AS cab_name,
                 d.driver_name,
                 u.user_name AS user_name,
-                u.email AS user_email,
-                u.mobile_no AS user_mobile,
-                b.status
+                b.status,
+                b.approx_hours
             FROM 
                 bookings b
             JOIN 
@@ -30,12 +29,12 @@ exports.getAllBookings = async (req, res) => {
 };
 
 
+
 // Fetch a single booking by ID
 exports.getBookingById = async (req, res) => {
     try {
-        const { id } = req.params; // Booking ID from the URL
+        const { id } = req.params;
 
-        // Query to fetch booking details along with related cab, driver, and user details
         const [rows] = await db.query(`
             SELECT 
                 b.id AS booking_id,
@@ -44,9 +43,8 @@ exports.getBookingById = async (req, res) => {
                 c.name AS cab_name,
                 d.driver_name,
                 u.user_name AS user_name,
-                u.email AS user_email,
-                u.mobile_no AS user_mobile,
-                b.status
+                b.status,
+                b.approx_hours
             FROM 
                 bookings b
             JOIN 
@@ -63,7 +61,6 @@ exports.getBookingById = async (req, res) => {
             return res.status(404).json({ message: 'Booking not found' });
         }
 
-        // Return the booking details
         res.status(200).json(rows[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -71,53 +68,44 @@ exports.getBookingById = async (req, res) => {
 };
 
 
+
 // Add a new booking
+
 exports.createBooking = async (req, res) => {
+    const { booking_date, booking_time, cab_id, driver_id, user_id, status, approx_hours } = req.body;
+  
     try {
-        const { booking_date, booking_time, cab_id, driver_id, user_id, status } = req.body;
-
-        // Validate cab_id
-        const [cab] = await db.query('SELECT id FROM cars WHERE id = ?', [cab_id]);
-        if (!cab.length) return res.status(400).json({ message: 'Invalid cab_id' });
-
-        // Validate driver_id
-        const [driver] = await db.query('SELECT id FROM drivers WHERE id = ?', [driver_id]);
-        if (!driver.length) return res.status(400).json({ message: 'Invalid driver_id' });
-
-        // Validate user_id
-        const [user] = await db.query('SELECT id FROM users WHERE id = ?', [user_id]);
-        if (!user.length) return res.status(400).json({ message: 'Invalid user_id' });
-
-        // Insert booking
-        const [result] = await db.query(`
-            INSERT INTO bookings (booking_date, booking_time, cab_id, driver_id, user_id, status)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `, [booking_date, booking_time, cab_id, driver_id, user_id, status || 'not booked']);
-
-        res.status(201).json({ message: 'Booking created', bookingId: result.insertId });
+      // Insert the booking details into the bookings table
+      await db.query(
+        `INSERT INTO bookings (booking_date, booking_time, cab_id, driver_id, user_id, status, approx_hours)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [booking_date, booking_time, cab_id, driver_id, user_id, status, approx_hours]
+      );
+  
+      // Update the car_unavailable_dates table for the specific car and date
+      await db.query(
+        `INSERT INTO car_unavailable_dates (car_id, unavailable_date)
+         VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE unavailable_date = VALUES(unavailable_date)`,
+        [cab_id, booking_date]
+      );
+  
+      res.status(201).json({ message: "Booking created and car status updated successfully" });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+      console.error("Error in createBooking:", error);
+      res.status(500).json({ error: error.message });
     }
-};
+  };
+
 
 
 // Update booking info
 exports.updateBooking = async (req, res) => {
     try {
-        const { id } = req.params; // Booking ID from the route
-        const { booking_date, booking_time, cab_id, driver_id, user_id, status } = req.body;
+        const { id } = req.params;
+        const { booking_date, booking_time, cab_id, driver_id, user_id, status, approx_hours } = req.body;
 
-        // Validate cab_id
-        const [cab] = await db.query('SELECT id FROM cars WHERE id = ?', [cab_id]);
-        if (!cab.length) return res.status(400).json({ message: 'Invalid cab_id' });
-
-        // Validate driver_id
-        const [driver] = await db.query('SELECT id FROM drivers WHERE id = ?', [driver_id]);
-        if (!driver.length) return res.status(400).json({ message: 'Invalid driver_id' });
-
-        // Validate user_id
-        const [user] = await db.query('SELECT id FROM users WHERE id = ?', [user_id]);
-        if (!user.length) return res.status(400).json({ message: 'Invalid user_id' });
+        // Validate foreign keys (cab_id, driver_id, user_id) here if needed...
 
         // Check if the booking exists
         const [existingBooking] = await db.query('SELECT * FROM bookings WHERE id = ?', [id]);
@@ -125,12 +113,12 @@ exports.updateBooking = async (req, res) => {
             return res.status(404).json({ message: 'Booking not found' });
         }
 
-        // Update the booking
+        // Update the booking with approx_hours
         const [result] = await db.query(
             `UPDATE bookings
-            SET booking_date = ?, booking_time = ?, cab_id = ?, driver_id = ?, user_id = ?, status = ?
-            WHERE id = ?`,
-            [booking_date, booking_time, cab_id, driver_id, user_id, status, id]
+             SET booking_date = ?, booking_time = ?, cab_id = ?, driver_id = ?, user_id = ?, status = ?, approx_hours = ?
+             WHERE id = ?`,
+            [booking_date, booking_time, cab_id, driver_id, user_id, status, approx_hours, id]
         );
 
         res.status(200).json({ message: 'Booking updated successfully' });
@@ -138,6 +126,7 @@ exports.updateBooking = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 
 
 // Delete a booking
