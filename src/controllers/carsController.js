@@ -12,6 +12,7 @@ exports.getAllCars = async (req, res) => {
                 c.rate_per_km,
                 c.fixed_charges,
                 c.status,
+                c.ride_status, -- Include ride_status
                 d.id AS assigned_driver_id,
                 d.driver_name AS assigned_driver_name,
                 d.driver_mobile_no AS assigned_driver_mobile,
@@ -38,6 +39,7 @@ exports.getAllCars = async (req, res) => {
     }
 };
 
+
   
 
 
@@ -54,6 +56,7 @@ exports.getSingleCar = async (req, res) => {
                 c.rate_per_km,
                 c.fixed_charges,
                 c.status,
+                c.ride_status, -- Include ride_status
                 d.id AS assigned_driver_id,
                 d.driver_name AS assigned_driver_name,
                 d.driver_mobile_no AS assigned_driver_mobile
@@ -76,14 +79,15 @@ exports.getSingleCar = async (req, res) => {
 };
 
 
+
 // Create a new car
 exports.createCar = async (req, res) => {
     try {
-        const { name, rate_per_km, fixed_charges, status } = req.body;
+        const { name, rate_per_km, fixed_charges, status, ride_status } = req.body;
 
         const [result] = await db.query(
-            'INSERT INTO cars (name, rate_per_km, fixed_charges, status) VALUES (?, ?, ?, ?)',
-            [name, rate_per_km, fixed_charges, status || 'available']
+            'INSERT INTO cars (name, rate_per_km, fixed_charges, status, ride_status) VALUES (?, ?, ?, ?, ?)',
+            [name, rate_per_km, fixed_charges, status || 'available', ride_status || 'ended']
         );
 
         res.status(201).json({ message: 'Car created', carId: result.insertId });
@@ -92,50 +96,34 @@ exports.createCar = async (req, res) => {
     }
 };
 
+
 // Update an existing car
 // Update an existing car and set status for a specific date
 exports.updateCar = async (req, res) => {
     try {
-      const { id } = req.params;
-      const { name, rate_per_km, fixed_charges, status, unavailable_date } = req.body;
-  
-      // Check if the car exists
-      const [existingCar] = await db.query('SELECT * FROM cars WHERE id = ?', [id]);
-      if (!existingCar.length) {
-        return res.status(404).json({ message: 'Car not found' });
-      }
-  
-      // Update the car status
-      if (status) {
-        await db.query(
-          `UPDATE cars
-           SET status = ?
-           WHERE id = ?`,
-          [status, id]
-        );
-  
-        // If unavailable_date is provided, insert into the unavailable dates table
-        if (unavailable_date) {
-          await db.query(
-            'INSERT INTO car_unavailable_dates (car_id, unavailable_date) VALUES (?, ?)',
-            [id, unavailable_date]
-          );
+        const { id } = req.params;
+        const { name, rate_per_km, fixed_charges, status, ride_status } = req.body;
+
+        // Check if the car exists
+        const [existingCar] = await db.query('SELECT * FROM cars WHERE id = ?', [id]);
+        if (!existingCar.length) {
+            return res.status(404).json({ message: 'Car not found' });
         }
-      }
-  
-      // Update other car details if provided
-      await db.query(
-        `UPDATE cars
-         SET name = ?, rate_per_km = ?, fixed_charges = ?
-         WHERE id = ?`,
-        [name || existingCar[0].name, rate_per_km || existingCar[0].rate_per_km, fixed_charges || existingCar[0].fixed_charges, id]
-      );
-  
-      res.status(200).json({ message: 'Car updated successfully' });
+
+        // Update the car details
+        await db.query(
+            `UPDATE cars
+             SET name = ?, rate_per_km = ?, fixed_charges = ?, status = ?, ride_status = ?
+             WHERE id = ?`,
+            [name || existingCar[0].name, rate_per_km || existingCar[0].rate_per_km, fixed_charges || existingCar[0].fixed_charges, status || existingCar[0].status, ride_status || existingCar[0].ride_status, id]
+        );
+
+        res.status(200).json({ message: 'Car updated successfully' });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+        res.status(500).json({ error: error.message });
     }
-  };
+};
+
   
 
 
