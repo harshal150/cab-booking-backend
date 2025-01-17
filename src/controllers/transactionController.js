@@ -3,13 +3,13 @@ const db = require('../config/db');
 
 exports.createTransaction = async (req, res) => {
     try {
-        const { user_id, booking_id, amount, payment_method, status } = req.body;
+        const { user_id, booking_id, transaction_id, amount, payment_method, status } = req.body;
 
         // Insert the transaction into the transactions table
         const [result] = await db.query(
-            `INSERT INTO transactions (user_id, booking_id, transaction_date, amount, payment_method, status)
-             VALUES (?, ?, NOW(), ?, ?, ?)`,
-            [user_id, booking_id, amount, payment_method, status]
+            `INSERT INTO transactions (user_id, booking_id, transaction_id, transaction_date, amount, payment_method, status)
+             VALUES (?, ?, ?, NOW(), ?, ?, ?)`,
+            [user_id, booking_id, transaction_id, amount, payment_method, status]
         );
 
         res.status(201).json({ message: 'Transaction recorded', transactionId: result.insertId });
@@ -24,7 +24,8 @@ exports.getAllTransactions = async (req, res) => {
     try {
         const [rows] = await db.query(`
             SELECT 
-                t.id AS transaction_id,
+                t.id AS id,
+                t.transaction_id,          -- Include transaction_id
                 t.user_id,
                 u.user_name,
                 t.booking_id,
@@ -49,13 +50,15 @@ exports.getAllTransactions = async (req, res) => {
 };
 
 
+
 exports.getTransactionById = async (req, res) => {
     try {
         const { id } = req.params;
 
         const [rows] = await db.query(`
             SELECT 
-                t.id AS transaction_id,
+                t.id AS id,
+                t.transaction_id,          -- Include transaction_id
                 t.user_id,
                 u.user_name,
                 t.booking_id,
@@ -84,6 +87,7 @@ exports.getTransactionById = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 
 
 exports.updateTransaction = async (req, res) => {
