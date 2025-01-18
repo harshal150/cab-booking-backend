@@ -7,6 +7,8 @@ const cron = require('node-cron');
 const crypto = require("crypto");
 const axios = require("axios");
 const querystring = require("querystring"); // Add this line to fix the issue
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const otpRoutes = require('./src/routes/otpRoutes');
 
 dotenv.config();
 const app = express();
@@ -14,6 +16,12 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+// app.use('/sms', createProxyMiddleware({
+//   target: 'http://msg.icloudsms.com', // Target SMS API URL
+//   changeOrigin: true,                 // Modify the origin header to match the target
+//   pathRewrite: { '^/sms': '/rest/services/sendSMS' } // Rewrite path for API compatibility
+// }));
+
 
 // Routes
 app.use('/api/cars', require('./src/routes/carsRoutes')); // Add the cars route
@@ -22,7 +30,7 @@ app.use('/api/bookings', require('./src/routes/bookingsRoutes')); // Add booking
 app.use('/api/users', require('./src/routes/usersRoutes')); // Add users route
 app.use('/api/unavailable', require('./src/routes/carsUnavailableRoutes')); // Add users route
 app.use('/api/transactions', require('./src/routes/transactionRoutes'));
-
+app.use('/api/otp', otpRoutes);
 // Test MySQL connection
 db.getConnection()
     .then(() => {
@@ -72,6 +80,18 @@ cron.schedule('0 0 * * *', async () => {
 
 
   app.use(bodyParser.urlencoded({ extended: true }));
+
+
+// app.use(
+//   '/rest/services/sendSMS',
+//   createProxyMiddleware({
+//     target: 'http://msg.icloudsms.com',
+//     changeOrigin: true,
+//   })
+// );
+  
+
+
 
   // Payment gateway credentials
   const RouterDomain = "https://test.payplatter.in/Router/initiateTransaction"; // Payment gateway base URL
