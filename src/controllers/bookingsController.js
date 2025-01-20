@@ -12,11 +12,10 @@ exports.getAllBookings = async (req, res) => {
                 c.name AS cab_name,
                 d.driver_name,
                 d.driver_mobile_no,
-                b.user_id,                  -- Include user_id
+                b.user_id,
                 u.user_name AS user_name,
                 u.mobile_no AS user_mobile_no,
                 b.status,
-                b.approx_hours,
                 b.transaction_id,
                 t.transaction_date,
                 t.amount,
@@ -31,13 +30,14 @@ exports.getAllBookings = async (req, res) => {
             JOIN 
                 users u ON b.user_id = u.id
             LEFT JOIN 
-                transactions t ON b.transaction_id = t.id  -- Join with transactions table
+                transactions t ON b.transaction_id = t.id
         `);
         res.status(200).json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
+
 
 
 
@@ -58,11 +58,10 @@ exports.getBookingById = async (req, res) => {
                 c.name AS cab_name,
                 d.driver_name,
                 d.driver_mobile_no,
-                b.user_id,                  -- Include user_id
+                b.user_id,
                 u.user_name AS user_name,
                 u.mobile_no AS user_mobile_no,
                 b.status,
-                b.approx_hours,
                 b.transaction_id,
                 t.transaction_date,
                 t.amount,
@@ -77,7 +76,7 @@ exports.getBookingById = async (req, res) => {
             JOIN 
                 users u ON b.user_id = u.id
             LEFT JOIN 
-                transactions t ON b.transaction_id = t.id  -- Join with transactions table
+                transactions t ON b.transaction_id = t.id
             WHERE 
                 b.id = ?
         `, [id]);
@@ -99,25 +98,26 @@ exports.getBookingById = async (req, res) => {
 
 
 
+
 // Add a new booking
 
 exports.createBooking = async (req, res) => {
-    const { booking_date, booking_time, cab_id, driver_id, user_id, status, approx_hours, transaction_id } = req.body;
+    const { booking_date, booking_time, cab_id, driver_id, user_id, status } = req.body;
 
     try {
-        // Insert the booking details into the bookings table
         await db.query(
-            `INSERT INTO bookings (booking_date, booking_time, cab_id, driver_id, user_id, status, approx_hours, transaction_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [booking_date, booking_time, cab_id, driver_id, user_id, status, approx_hours, transaction_id]
+            `INSERT INTO bookings (booking_date, booking_time, cab_id, driver_id, user_id, status)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [booking_date, booking_time, cab_id, driver_id, user_id, status]
         );
 
         res.status(201).json({ message: "Booking created successfully" });
     } catch (error) {
-        console.error("Error in createBooking:", error);
+        console.error("Error creating booking:", error);
         res.status(500).json({ error: error.message });
     }
 };
+
 
 
 
@@ -126,20 +126,18 @@ exports.createBooking = async (req, res) => {
 exports.updateBooking = async (req, res) => {
     try {
         const { id } = req.params;
-        const { booking_date, booking_time, cab_id, driver_id, user_id, status, approx_hours, transaction_id } = req.body;
+        const { booking_date, booking_time, cab_id, driver_id, user_id, status } = req.body;
 
-        // Check if the booking exists
         const [existingBooking] = await db.query('SELECT * FROM bookings WHERE id = ?', [id]);
         if (!existingBooking.length) {
             return res.status(404).json({ message: 'Booking not found' });
         }
 
-        // Update the booking details
         await db.query(
             `UPDATE bookings
-             SET booking_date = ?, booking_time = ?, cab_id = ?, driver_id = ?, user_id = ?, status = ?, approx_hours = ?, transaction_id = ?
+             SET booking_date = ?, booking_time = ?, cab_id = ?, driver_id = ?, user_id = ?, status = ?
              WHERE id = ?`,
-            [booking_date, booking_time, cab_id, driver_id, user_id, status, approx_hours, transaction_id, id]
+            [booking_date, booking_time, cab_id, driver_id, user_id, status, id]
         );
 
         res.status(200).json({ message: 'Booking updated successfully' });
@@ -147,6 +145,7 @@ exports.updateBooking = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 
 
 
