@@ -16,8 +16,8 @@ exports.getAllBookings = async (req, res) => {
                 u.user_name AS user_name,
                 u.mobile_no AS user_mobile_no,
                 b.status,
+                b.ride_status, -- Fetch ride_status from the bookings table
                 b.transaction_id,
-                t.transaction_date,
                 t.amount,
                 t.payment_method,
                 t.status AS transaction_status
@@ -62,8 +62,8 @@ exports.getBookingById = async (req, res) => {
                 u.user_name AS user_name,
                 u.mobile_no AS user_mobile_no,
                 b.status,
+                b.ride_status, -- Fetch ride_status from the bookings table
                 b.transaction_id,
-                t.transaction_date,
                 t.amount,
                 t.payment_method,
                 t.status AS transaction_status
@@ -99,19 +99,26 @@ exports.getBookingById = async (req, res) => {
 
 
 
+
+
 // Add a new booking
 
 exports.createBooking = async (req, res) => {
     const { booking_date, booking_time, cab_id, driver_id, user_id, status } = req.body;
 
     try {
-        await db.query(
+        // Execute the INSERT query and get the result
+        const [result] = await db.query(
             `INSERT INTO bookings (booking_date, booking_time, cab_id, driver_id, user_id, status)
              VALUES (?, ?, ?, ?, ?, ?)`,
             [booking_date, booking_time, cab_id, driver_id, user_id, status]
         );
 
-        res.status(201).json({ message: "Booking created successfully" });
+        // Send the response with the created booking ID
+        res.status(201).json({
+            message: "Booking created successfully",
+            bookingId: result.insertId, // Include the booking ID
+        });
     } catch (error) {
         console.error("Error creating booking:", error);
         res.status(500).json({ error: error.message });
@@ -122,22 +129,27 @@ exports.createBooking = async (req, res) => {
 
 
 
+
 // Update booking info
 exports.updateBooking = async (req, res) => {
     try {
         const { id } = req.params;
-        const { booking_date, booking_time, cab_id, driver_id, user_id, status } = req.body;
+        const { status , amount , txn_id , bookingId  } = req.body;
+        console.log(amount)
+        console.log(status)
+        console.log(bookingId)
+        console.log(txn_id)
 
-        const [existingBooking] = await db.query('SELECT * FROM bookings WHERE id = ?', [id]);
+        const [existingBooking] = await db.query('SELECT * FROM bookings WHERE id = ?', [bookingId]);
         if (!existingBooking.length) {
             return res.status(404).json({ message: 'Booking not found' });
         }
 
         await db.query(
             `UPDATE bookings
-             SET booking_date = ?, booking_time = ?, cab_id = ?, driver_id = ?, user_id = ?, status = ?
+             SET status = ?, amount = ?, transaction_id = ?
              WHERE id = ?`,
-            [booking_date, booking_time, cab_id, driver_id, user_id, status, id]
+            [status, amount, txn_id, bookingId]
         );
 
         res.status(200).json({ message: 'Booking updated successfully' });
@@ -145,6 +157,32 @@ exports.updateBooking = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+exports.updateBookingStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { ride_status } = req.body;
+        console.log(ride_status)
+ 
+        const [existingBooking] = await db.query('SELECT * FROM bookings WHERE id = ?', [id]);
+        if (!existingBooking.length) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        await db.query(
+            `UPDATE bookings
+             SET ride_status = ?
+             WHERE id = ?`,
+            [ride_status ,  id]
+        );
+
+        res.status(200).json({ message: 'Booking status updated successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 
 
 
