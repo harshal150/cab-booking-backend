@@ -36,6 +36,7 @@ exports.getAllTransactions = async (req, res) => {
                 u.user_name,
                 t.booking_id,
                 b.status AS booking_status,
+                b.ride_status,                -- Include ride_status from bookings table
                 t.ride_id,
                 t.start_reading,
                 t.end_reading,
@@ -69,6 +70,7 @@ exports.getAllTransactions = async (req, res) => {
 
 
 
+
 exports.getTransactionById = async (req, res) => {
     const { id } = req.params;
 
@@ -81,6 +83,7 @@ exports.getTransactionById = async (req, res) => {
                 u.user_name,
                 t.booking_id,
                 b.status AS booking_status,
+                b.ride_status,                -- Include ride_status from bookings table
                 t.ride_id,
                 t.start_reading,
                 t.end_reading,
@@ -120,6 +123,7 @@ exports.getTransactionById = async (req, res) => {
 
 
 
+
 exports.updateTransaction = async (req, res) => {
     const { id } = req.params;
     const {
@@ -127,14 +131,12 @@ exports.updateTransaction = async (req, res) => {
         reading_difference,
         rate,
         calculated_amount,
-        transaction_id,
-      
-        amount,
-        payment_method,
-        receipt_number,
     } = req.body;
 
+    console.log(req.body); // Log the request body for debugging
+
     try {
+        // Check if the transaction exists
         const [existingTransaction] = await db.query(
             `SELECT * FROM transactions WHERE id = ?`,
             [id]
@@ -144,30 +146,21 @@ exports.updateTransaction = async (req, res) => {
             return res.status(404).json({ message: "Transaction not found" });
         }
 
+        // Update the transaction
         const [result] = await db.query(
             `UPDATE transactions
              SET 
                 end_reading = ?, 
                 reading_difference = ?, 
                 rate = ?, 
-                calculated_amount = ?, 
-                transaction_id = ?, 
-                
-                amount = ?, 
-                payment_method = ?, 
-                receipt_number = ?
-             WHERE id = ?`,
+                calculated_amount = ?
+             WHERE id = ?`, // Removed the trailing comma
             [
                 end_reading,
                 reading_difference,
                 rate,
                 calculated_amount,
-                transaction_id,
-              
-                amount,
-                payment_method,
-                receipt_number,
-                id,
+                id, // Added the `id` parameter
             ]
         );
 
@@ -181,6 +174,7 @@ exports.updateTransaction = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 
 
 exports.updateAfterTransaction = async (req, res) => {
