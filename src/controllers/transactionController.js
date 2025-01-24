@@ -25,7 +25,6 @@ exports.createTransaction = async (req, res) => {
 
 
 
-
 exports.getAllTransactions = async (req, res) => {
     try {
         const [rows] = await db.query(`
@@ -34,9 +33,14 @@ exports.getAllTransactions = async (req, res) => {
                 t.created_date,
                 t.user_id,
                 u.user_name,
+                u.mobile_no AS passenger_contact,  -- Passenger contact (user's mobile number)
                 t.booking_id,
                 b.status AS booking_status,
-                b.ride_status,                -- Include ride_status from bookings table
+                b.ride_status,
+                b.cab_id,
+                c.name AS car_name,                -- Car name
+                d.driver_name,                    -- Driver's name
+                d.driver_mobile_no,               -- Driver's mobile number
                 t.ride_id,
                 t.start_reading,
                 t.end_reading,
@@ -56,6 +60,10 @@ exports.getAllTransactions = async (req, res) => {
                 users u ON t.user_id = u.id
             LEFT JOIN 
                 bookings b ON t.booking_id = b.id
+            LEFT JOIN 
+                cars c ON b.cab_id = c.id        -- Join with cars table
+            LEFT JOIN 
+                drivers d ON b.driver_id = d.id  -- Join with drivers table
         `);
 
         res.status(200).json(rows);
@@ -81,9 +89,14 @@ exports.getTransactionById = async (req, res) => {
                 t.created_date,
                 t.user_id,
                 u.user_name,
+                u.mobile_no AS passenger_contact,  -- Passenger contact (user's mobile number)
                 t.booking_id,
                 b.status AS booking_status,
-                b.ride_status,                -- Include ride_status from bookings table
+                b.ride_status,
+                b.cab_id,
+                c.name AS car_name,                -- Car name
+                d.driver_name,                    -- Driver's name
+                d.driver_mobile_no,               -- Driver's mobile number
                 t.ride_id,
                 t.start_reading,
                 t.end_reading,
@@ -103,6 +116,10 @@ exports.getTransactionById = async (req, res) => {
                 users u ON t.user_id = u.id
             LEFT JOIN 
                 bookings b ON t.booking_id = b.id
+            LEFT JOIN 
+                cars c ON b.cab_id = c.id        -- Join with cars table
+            LEFT JOIN 
+                drivers d ON b.driver_id = d.id  -- Join with drivers table
             WHERE 
                 t.id = ?
         `, [id]);
