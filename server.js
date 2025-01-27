@@ -1,5 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const env = process.env.NODE_ENV;
+
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const db = require('./src/config/db'); // Import MySQL connection
@@ -10,7 +12,7 @@ const querystring = require("querystring"); // Add this line to fix the issue
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const otpRoutes = require('./src/routes/otpRoutes');
 
-dotenv.config();
+dotenv.config({ path: `.env.${env} `});
 const app = express();
 
 // Middleware
@@ -42,7 +44,7 @@ db.getConnection()
     });
 
 // Start server
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
