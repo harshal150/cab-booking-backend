@@ -32,7 +32,9 @@ app.use('/api/bookings', require('./src/routes/bookingsRoutes')); // Add booking
 app.use('/api/users', require('./src/routes/usersRoutes')); // Add users route
 app.use('/api/unavailable', require('./src/routes/carsUnavailableRoutes')); // Add users route
 app.use('/api/transactions', require('./src/routes/transactionRoutes'));
+app.use('/api/admin', require('./src/routes/adminRoutes'));
 app.use('/api/otp', otpRoutes);
+
 // Test MySQL connection
 db.getConnection()
     .then(() => {
