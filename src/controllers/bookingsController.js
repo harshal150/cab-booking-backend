@@ -7,7 +7,7 @@ exports.getAllBookings = async (req, res) => {
            SELECT 
     b.id AS booking_id,
     b.randomId,  -- Include randomId column
-    b.booking_date,
+    DATE_FORMAT(b.booking_date, '%Y-%m-%d') AS booking_date,  
     b.booking_time,
     b.cab_id,
     c.name AS cab_name,
@@ -49,7 +49,7 @@ exports.getBookingById = async (req, res) => {
             SELECT 
                 b.id AS booking_id,
                 b.randomId,  -- Include randomId column
-                b.booking_date,
+                DATE_FORMAT(b.booking_date, '%Y-%m-%d') AS booking_date, 
                 b.booking_time,
                 b.cab_id,
                 c.name AS cab_name,

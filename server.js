@@ -18,6 +18,10 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+app.use((req, res, next) => {
+  console.log(req.path, req.method);
+  next();
+});
 // app.use('/sms', createProxyMiddleware({
 //   target: 'http://msg.icloudsms.com', // Target SMS API URL
 //   changeOrigin: true,                 // Modify the origin header to match the target
